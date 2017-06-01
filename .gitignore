@@ -1,0 +1,19 @@
+# Visual Studio
+*.[Oo]bj
+[Bb]in/
+[Oo]bj/
+*.suo
+*.user
+*.[Pp]ublish.xml
+*.dbmdl
+Import Schema Logs/
+src/{DATABASE_PROJECT_NAME}/sql/*
+*.dbproj.schemaview
+_ReSharper*/
+src/packages/
+*.orig
+ClientBin/
+App_Data/
+.vs/
+Logs/
+
