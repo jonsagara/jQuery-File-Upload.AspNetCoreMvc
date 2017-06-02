@@ -6,16 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - jQuery_File_Upload.AspNetCoreMvc</title>
 
-    <environment names="Development">
+    <environment names="@EnvironmentName.DEVELOPMENT">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
         <link rel="stylesheet" href="~/css/site.css" />
     </environment>
-    <environment names="Staging,Production">
+    <environment names="@EnvironmentName.NOT_DEVELOPMENT">
         <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css"
               asp-fallback-href="~/lib/bootstrap/dist/css/bootstrap.min.css"
               asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
         <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
     </environment>
+    @RenderSection("Styles", required: false)
     @Html.Raw(JavaScriptSnippet.FullScript)
 </head>
 <body>
@@ -33,7 +34,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li><a asp-area="" asp-controller="FileUpload" asp-action="Show">Show</a></li>
-                    <li><a asp-area="" asp-controller="FileUpload" asp-action="Add">Add</a></li>
+                    <li><a asp-area="" asp-controller="FileUpload" asp-action="Index">Add</a></li>
                     <li><a asp-area="" asp-controller="FileUpload" asp-action="Edit">Edit</a></li>
                 </ul>
             </div>
@@ -47,12 +48,12 @@
         </footer>
     </div>
 
-    <environment names="Development">
+    <environment names="@EnvironmentName.DEVELOPMENT">
         <script src="~/lib/jquery/dist/jquery.js"></script>
         <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
         <script src="~/js/site.js" asp-append-version="true"></script>
     </environment>
-    <environment names="Staging,Production">
+    <environment names="@EnvironmentName.NOT_DEVELOPMENT">
         <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
                 asp-fallback-src="~/lib/jquery/dist/jquery.min.js"
                 asp-fallback-test="window.jQuery"

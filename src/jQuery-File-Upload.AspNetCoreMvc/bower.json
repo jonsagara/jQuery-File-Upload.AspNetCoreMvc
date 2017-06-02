@@ -5,6 +5,9 @@
     "bootstrap": "3.3.7",
     "jquery": "2.2.0",
     "jquery-validation": "1.14.0",
-    "jquery-validation-unobtrusive": "3.2.6"
+    "jquery-validation-unobtrusive": "3.2.6",
+    "blueimp-file-upload": "jquery-file-upload#v9.18.0",
+    "blueimp-gallery": "v2.25.0",
+    "jquery-ui": "jquery.ui#1.12.1"
   }
 }
