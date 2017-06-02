@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Threading.Tasks;
 using jQuery_File_Upload.AspNetCoreMvc.Models;
+using jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
@@ -8,10 +9,12 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
     public class FileUploadController : Controller
     {
         private readonly FilesHelper _filesHelper;
+        private readonly IMediator _mediator;
         
-        public FileUploadController(FilesHelper filesHelper)
+        public FileUploadController(FilesHelper filesHelper, IMediator mediator)
         {
             _filesHelper = filesHelper;
+            _mediator = mediator;
         }
 
         public ActionResult Index()
@@ -37,24 +40,35 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Upload()
+        public async Task<ActionResult> Upload(FileUploadUpload.Command command)
         {
-            var resultList = new List<ViewDataUploadFilesResult>();
+            command.HttpContext = HttpContext;
 
-            var CurrentContext = HttpContext;
+            var result = await _mediator.Send(command);
+            
+            // I think we can move this into the mediatr class.
+            var jsonFiles = new JsonFiles(result.FileResults);
 
-            _filesHelper.UploadAndShowResults(CurrentContext, resultList);
-            JsonFiles files = new JsonFiles(resultList);
+            return result.FileResults.Count == 0
+                ? Json("Error")
+                : Json(jsonFiles);
 
-            bool isEmpty = !resultList.Any();
-            if (isEmpty)
-            {
-                return Json("Error ");
-            }
-            else
-            {
-                return Json(files);
-            }
+            //var resultList = new List<ViewDataUploadFilesResult>();
+
+            //var CurrentContext = HttpContext;
+
+            //_filesHelper.UploadAndShowResults(CurrentContext, resultList);
+            //JsonFiles files = new JsonFiles(resultList);
+
+            //bool isEmpty = !resultList.Any();
+            //if (isEmpty)
+            //{
+            //    return Json("Error ");
+            //}
+            //else
+            //{
+            //    return Json(files);
+            //}
         }
 
         public JsonResult GetFileList()

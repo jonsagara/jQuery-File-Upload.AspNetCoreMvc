@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 using Microsoft.AspNetCore.Hosting;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Models
@@ -23,6 +24,13 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             _storageRootPath = Path.Combine(env.ContentRootPath, FILE_DIR_PATH);
             _storageTempPath = Path.Combine(env.ContentRootPath, TEMP_PATH);
         }
+
+        public string StorageRootPath => _storageRootPath;
+        public string StorageTempPath => _storageTempPath;
+        public string UrlBase => URL_BASE;
+        public string DeleteUrl => DELETE_URL;
+        public string DeleteType => DELETE_TYPE;
+
 
         // This method is never called
         //public void DeleteFiles(string pathToDelete)
@@ -94,6 +102,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             return files;
         }
 
+        /* Disable because uploads work differently in ASP.NET Core MVC
         public void UploadAndShowResults(HttpContextBase ContentBase, List<ViewDataUploadFilesResult> resultList)
         {
             var httpRequest = ContentBase.Request;
@@ -194,9 +203,12 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             }
             statuses.Add(UploadResult(file.FileName, file.ContentLength, file.FileName));
         }
+        */
+
         public ViewDataUploadFilesResult UploadResult(string FileName, int fileSize, string FileFullPath)
         {
-            string getType = System.Web.MimeMapping.GetMimeMapping(FileFullPath);
+            //string getType = System.Web.MimeMapping.GetMimeMapping(FileFullPath);
+            string getType = MimeMapping.GetMimeMapping(FileFullPath);
             var result = new ViewDataUploadFilesResult()
             {
                 name = FileName,
