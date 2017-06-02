@@ -7,10 +7,13 @@
     <environment names="@EnvironmentName.DEVELOPMENT">
         <!-- blueimp Gallery styles -->
         <link href="~/lib/blueimp-gallery/css/blueimp-gallery.min.css" rel="stylesheet" asp-append-version="true" />
+        @*<link href="~/lib/blueimp-gallery/css/blueimp-gallery-indicator.css" rel="stylesheet" asp-append-version="true" />*@
 
         <!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
         <link href="~/lib/blueimp-file-upload/css/jquery.fileupload.css" rel="stylesheet" asp-append-version="true" />
         <link href="~/lib/blueimp-file-upload/css/jquery.fileupload-ui.css" rel="stylesheet" asp-append-version="true" />
+
+
     </environment>
 }
 
@@ -176,6 +179,7 @@
 
         <!-- blueimp Gallery script -->
         <script src="~/lib/blueimp-gallery/js/jquery.blueimp-gallery.min.js" asp-append-version="true"></script>
+        @*<script src="~/lib/blueimp-gallery/js/blueimp-gallery-indicator.js" asp-append-version="true"></script>*@
 
         <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
         <script src="~/lib/blueimp-file-upload/js/jquery.iframe-transport.js" asp-append-version="true"></script>
