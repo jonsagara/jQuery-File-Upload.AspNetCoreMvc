@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using jQuery_File_Upload.AspNetCoreMvc.Infrastructure.Logging;
+using jQuery_File_Upload.AspNetCoreMvc.Models;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -39,6 +40,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc
         {
             // Configure MediatR.
             services.AddMediatR(typeof(Startup));
+
+            // Application services
+            services.AddScoped<FilesHelper, FilesHelper>();
 
             // Add framework services.
             services

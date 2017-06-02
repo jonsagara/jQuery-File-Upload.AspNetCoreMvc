@@ -1,29 +1,17 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using jQuery_File_Upload.AspNetCoreMvc.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
 {
     public class FileUploadController : Controller
     {
-        FilesHelper filesHelper;
-        const string TEMP_PATH = "~/somefiles/";
-        const string SERVER_MAP_PATH = "~/Files/somefiles/";
-
-        private readonly string _storageRootPath;
-
-        private string UrlBase = "/Files/somefiles/";
-        string DeleteURL = "/FileUpload/DeleteFile/?file=";
-        string DeleteType = "GET";
-
-        public FileUploadController(IHostingEnvironment env)
+        private readonly FilesHelper _filesHelper;
+        
+        public FileUploadController(FilesHelper filesHelper)
         {
-            _storageRootPath = Path.Combine(env.ContentRootPath, SERVER_MAP_PATH);
-
-            filesHelper = new FilesHelper(DeleteURL, DeleteType, _storageRootPath, UrlBase, TEMP_PATH, SERVER_MAP_PATH);
+            _filesHelper = filesHelper;
         }
 
         public ActionResult Index()
@@ -33,7 +21,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
 
         public ActionResult Show()
         {
-            JsonFiles ListOfFiles = filesHelper.GetFileList();
+            JsonFiles ListOfFiles = _filesHelper.GetFileList();
             var model = new FilesViewModel()
             {
                 Files = ListOfFiles.files
@@ -55,7 +43,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
 
             var CurrentContext = HttpContext;
 
-            filesHelper.UploadAndShowResults(CurrentContext, resultList);
+            _filesHelper.UploadAndShowResults(CurrentContext, resultList);
             JsonFiles files = new JsonFiles(resultList);
 
             bool isEmpty = !resultList.Any();
@@ -71,13 +59,13 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
 
         public JsonResult GetFileList()
         {
-            var list = filesHelper.GetFileList();
+            var list = _filesHelper.GetFileList();
             return Json(list);
         }
         
         public JsonResult DeleteFile(string file)
         {
-            filesHelper.DeleteFile(file);
+            _filesHelper.DeleteFile(file);
             return Json("OK");
         }
     }

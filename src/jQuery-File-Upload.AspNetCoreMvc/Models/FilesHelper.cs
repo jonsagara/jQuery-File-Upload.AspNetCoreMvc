@@ -1,77 +1,76 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Models
 {
     public class FilesHelper
     {
+        private const string TEMP_PATH = "/somefiles/";
+        private const string FILE_DIR_PATH = "/Files/somefiles/";
+        private const string URL_BASE = "/Files/somefiles/";
+        private const string DELETE_URL = "/FileUpload/DeleteFile/?file=";
+        private const string DELETE_TYPE = "GET";
 
-        String DeleteURL = null;
-        String DeleteType = null;
-        String StorageRoot = null;
-        String UrlBase = null;
-        String tempPath = null;
-        //ex:"~/Files/something/";
-        String serverMapPath = null;
-        public FilesHelper(String DeleteURL, String DeleteType, String StorageRoot, String UrlBase, String tempPath, String serverMapPath)
+        private readonly IHostingEnvironment _env;
+        private readonly string _storageRootPath;
+        private readonly string _storageTempPath;
+
+        public FilesHelper(IHostingEnvironment env)
         {
-            this.DeleteURL = DeleteURL;
-            this.DeleteType = DeleteType;
-            this.StorageRoot = StorageRoot;
-            this.UrlBase = UrlBase;
-            this.tempPath = tempPath;
-            this.serverMapPath = serverMapPath;
+            _env = env;
+            _storageRootPath = Path.Combine(env.ContentRootPath, FILE_DIR_PATH);
+            _storageTempPath = Path.Combine(env.ContentRootPath, TEMP_PATH);
         }
 
-        public void DeleteFiles(String pathToDelete)
-        {
+        // This method is never called
+        //public void DeleteFiles(string pathToDelete)
+        //{
 
-            string path = HostingEnvironment.MapPath(pathToDelete);
+        //    string path = HostingEnvironment.MapPath(pathToDelete);
 
-            System.Diagnostics.Debug.WriteLine(path);
-            if (Directory.Exists(path))
-            {
-                DirectoryInfo di = new DirectoryInfo(path);
-                foreach (FileInfo fi in di.GetFiles())
-                {
-                    System.IO.File.Delete(fi.FullName);
-                    System.Diagnostics.Debug.WriteLine(fi.Name);
-                }
+        //    System.Diagnostics.Debug.WriteLine(path);
+        //    if (Directory.Exists(path))
+        //    {
+        //        DirectoryInfo di = new DirectoryInfo(path);
+        //        foreach (FileInfo fi in di.GetFiles())
+        //        {
+        //            File.Delete(fi.FullName);
+        //            System.Diagnostics.Debug.WriteLine(fi.Name);
+        //        }
 
-                di.Delete(true);
-            }
-        }
+        //        di.Delete(true);
+        //    }
+        //}
 
-        public String DeleteFile(String file)
+        public string DeleteFile(string file)
         {
             System.Diagnostics.Debug.WriteLine("DeleteFile");
             //    var req = HttpContext.Current;
             System.Diagnostics.Debug.WriteLine(file);
 
-            String fullPath = Path.Combine(StorageRoot, file);
+            string fullPath = Path.Combine(_storageRootPath, file);
             System.Diagnostics.Debug.WriteLine(fullPath);
-            System.Diagnostics.Debug.WriteLine(System.IO.File.Exists(fullPath));
-            String thumbPath = "/" + file + "80x80.jpg";
-            String partThumb1 = Path.Combine(StorageRoot, "thumbs");
-            String partThumb2 = Path.Combine(partThumb1, file + "80x80.jpg");
+            System.Diagnostics.Debug.WriteLine(File.Exists(fullPath));
+            string thumbPath = "/" + file + "80x80.jpg";
+            string partThumb1 = Path.Combine(_storageRootPath, "thumbs");
+            string partThumb2 = Path.Combine(partThumb1, file + "80x80.jpg");
 
             System.Diagnostics.Debug.WriteLine(partThumb2);
-            System.Diagnostics.Debug.WriteLine(System.IO.File.Exists(partThumb2));
-            if (System.IO.File.Exists(fullPath))
+            System.Diagnostics.Debug.WriteLine(File.Exists(partThumb2));
+            if (File.Exists(fullPath))
             {
                 //delete thumb 
-                if (System.IO.File.Exists(partThumb2))
+                if (File.Exists(partThumb2))
                 {
-                    System.IO.File.Delete(partThumb2);
+                    File.Delete(partThumb2);
                 }
-                System.IO.File.Delete(fullPath);
-                String succesMessage = "Ok";
+                File.Delete(fullPath);
+                string succesMessage = "Ok";
                 return succesMessage;
             }
-            String failMessage = "Error Delete";
+            string failMessage = "Error Delete";
             return failMessage;
         }
         public JsonFiles GetFileList()
@@ -79,7 +78,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
 
             var r = new List<ViewDataUploadFilesResult>();
 
-            String fullPath = Path.Combine(StorageRoot);
+            string fullPath = Path.Combine(_storageRootPath);
             if (Directory.Exists(fullPath))
             {
                 DirectoryInfo dir = new DirectoryInfo(fullPath);
@@ -98,14 +97,14 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
         public void UploadAndShowResults(HttpContextBase ContentBase, List<ViewDataUploadFilesResult> resultList)
         {
             var httpRequest = ContentBase.Request;
-            System.Diagnostics.Debug.WriteLine(Directory.Exists(tempPath));
+            System.Diagnostics.Debug.WriteLine(Directory.Exists(_storageTempPath));
 
-            String fullPath = Path.Combine(StorageRoot);
+            string fullPath = Path.Combine(_storageRootPath);
             Directory.CreateDirectory(fullPath);
             // Create new folder for thumbs
             Directory.CreateDirectory(fullPath + "/thumbs/");
 
-            foreach (String inputTagName in httpRequest.Files)
+            foreach (string inputTagName in httpRequest.Files)
             {
 
                 var headers = httpRequest.Headers;
@@ -134,7 +133,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             for (int i = 0; i < request.Files.Count; i++)
             {
                 var file = request.Files[i];
-                String pathOnServer = Path.Combine(StorageRoot);
+                string pathOnServer = Path.Combine(_storageRootPath);
                 var fullPath = Path.Combine(pathOnServer, Path.GetFileName(file.FileName));
                 file.SaveAs(fullPath);
 
@@ -142,7 +141,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
                 string[] imageArray = file.FileName.Split('.');
                 if (imageArray.Length != 0)
                 {
-                    String extansion = imageArray[imageArray.Length - 1].ToLower();
+                    string extansion = imageArray[imageArray.Length - 1].ToLower();
                     if (extansion != "jpg" && extansion != "png" && extansion != "jpeg") //Do not create thumb if file is not an image
                     {
 
@@ -150,10 +149,10 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
                     else
                     {
                         var ThumbfullPath = Path.Combine(pathOnServer, "thumbs");
-                        //String fileThumb = file.FileName + ".80x80.jpg";
-                        String fileThumb = Path.GetFileNameWithoutExtension(file.FileName) + "80x80.jpg";
+                        //string fileThumb = file.FileName + ".80x80.jpg";
+                        string fileThumb = Path.GetFileNameWithoutExtension(file.FileName) + "80x80.jpg";
                         var ThumbfullPath2 = Path.Combine(ThumbfullPath, fileThumb);
-                        using (MemoryStream stream = new MemoryStream(System.IO.File.ReadAllBytes(fullPath)))
+                        using (MemoryStream stream = new MemoryStream(File.ReadAllBytes(fullPath)))
                         {
                             var thumbnail = new WebImage(stream).Resize(80, 80);
                             thumbnail.Save(ThumbfullPath2, "jpg");
@@ -173,7 +172,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             if (request.Files.Count != 1) throw new HttpRequestValidationException("Attempt to upload chunked file containing more than one fragment per request");
             var file = request.Files[0];
             var inputStream = file.InputStream;
-            String patchOnServer = Path.Combine(StorageRoot);
+            string patchOnServer = Path.Combine(_storageRootPath);
             var fullName = Path.Combine(patchOnServer, Path.GetFileName(file.FileName));
             var ThumbfullPath = Path.Combine(fullName, Path.GetFileName(file.FileName + "80x80.jpg"));
             ImageHandler handler = new ImageHandler();
@@ -195,23 +194,23 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
             }
             statuses.Add(UploadResult(file.FileName, file.ContentLength, file.FileName));
         }
-        public ViewDataUploadFilesResult UploadResult(String FileName, int fileSize, String FileFullPath)
+        public ViewDataUploadFilesResult UploadResult(string FileName, int fileSize, string FileFullPath)
         {
-            String getType = System.Web.MimeMapping.GetMimeMapping(FileFullPath);
+            string getType = System.Web.MimeMapping.GetMimeMapping(FileFullPath);
             var result = new ViewDataUploadFilesResult()
             {
                 name = FileName,
                 size = fileSize,
                 type = getType,
-                url = UrlBase + FileName,
-                deleteUrl = DeleteURL + FileName,
+                url = URL_BASE + FileName,
+                deleteUrl = DELETE_URL + FileName,
                 thumbnailUrl = CheckThumb(getType, FileName),
-                deleteType = DeleteType,
+                deleteType = DELETE_TYPE,
             };
             return result;
         }
 
-        public String CheckThumb(String type, String FileName)
+        public string CheckThumb(string type, string FileName)
         {
             var splited = type.Split('/');
             if (splited.Length == 2)
@@ -219,7 +218,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
                 string extansion = splited[1].ToLower();
                 if (extansion.Equals("jpeg") || extansion.Equals("jpg") || extansion.Equals("png") || extansion.Equals("gif"))
                 {
-                    String thumbnailUrl = UrlBase + "thumbs/" + Path.GetFileNameWithoutExtension(FileName) + "80x80.jpg";
+                    string thumbnailUrl = URL_BASE + "thumbs/" + Path.GetFileNameWithoutExtension(FileName) + "80x80.jpg";
                     return thumbnailUrl;
                 }
                 else
@@ -233,33 +232,35 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
                     {
                         return "/Content/Free-file-icons/48px/zip.png";
                     }
-                    String thumbnailUrl = "/Content/Free-file-icons/48px/" + extansion + ".png";
+                    string thumbnailUrl = "/Content/Free-file-icons/48px/" + extansion + ".png";
                     return thumbnailUrl;
                 }
             }
             else
             {
-                return UrlBase + "/thumbs/" + Path.GetFileNameWithoutExtension(FileName) + "80x80.jpg";
+                return URL_BASE + "/thumbs/" + Path.GetFileNameWithoutExtension(FileName) + "80x80.jpg";
             }
 
         }
-        public List<String> FilesList()
-        {
 
-            List<String> Filess = new List<String>();
-            string path = HostingEnvironment.MapPath(serverMapPath);
-            System.Diagnostics.Debug.WriteLine(path);
-            if (Directory.Exists(path))
-            {
-                DirectoryInfo di = new DirectoryInfo(path);
-                foreach (FileInfo fi in di.GetFiles())
-                {
-                    Filess.Add(fi.Name);
-                    System.Diagnostics.Debug.WriteLine(fi.Name);
-                }
+        // This method is never called
+        //public List<string> FilesList()
+        //{
 
-            }
-            return Filess;
-        }
+        //    List<string> Filess = new List<string>();
+        //    string path = HostingEnvironment.MapPath(serverMapPath);
+        //    System.Diagnostics.Debug.WriteLine(path);
+        //    if (Directory.Exists(path))
+        //    {
+        //        DirectoryInfo di = new DirectoryInfo(path);
+        //        foreach (FileInfo fi in di.GetFiles())
+        //        {
+        //            Filess.Add(fi.Name);
+        //            System.Diagnostics.Debug.WriteLine(fi.Name);
+        //        }
+
+        //    }
+        //    return Filess;
+        //}
     }
 }
