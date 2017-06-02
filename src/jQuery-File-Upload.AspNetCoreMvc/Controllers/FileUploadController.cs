@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using jQuery_File_Upload.AspNetCoreMvc.Models;
 using jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
@@ -39,7 +41,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        //[ValidateAntiForgeryToken]
         public async Task<ActionResult> Upload(FileUploadUpload.Command command)
         {
             command.HttpContext = HttpContext;

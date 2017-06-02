@@ -8,8 +8,8 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
 {
     public class FilesHelper
     {
-        private const string TEMP_PATH = "/somefiles/";
-        private const string FILE_DIR_PATH = "/Files/somefiles/";
+        private const string TEMP_PATH = @"somefiles";
+        private const string FILE_DIR_PATH = @"Files\somefiles";
         private const string URL_BASE = "/Files/somefiles/";
         private const string DELETE_URL = "/FileUpload/DeleteFile/?file=";
         private const string DELETE_TYPE = "GET";

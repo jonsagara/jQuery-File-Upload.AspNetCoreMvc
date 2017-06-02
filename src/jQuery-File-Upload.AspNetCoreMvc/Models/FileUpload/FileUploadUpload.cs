@@ -45,8 +45,6 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                     UploadPartialFile(message, partialFileName);
                 }
 
-                await Task.FromResult(0);
-
                 return result;
             }
 
