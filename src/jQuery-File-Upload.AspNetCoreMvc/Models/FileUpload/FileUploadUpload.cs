@@ -50,6 +50,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
 
             private async Task UploadWholeFileAsync(Command message, CommandResult result)
             {
+                // Ensure the storage root exists.
+                Directory.CreateDirectory(_filesHelper.StorageRootPath);
+
                 foreach (var file in message.Files)
                 {
                     if (file.Length > 0L)
