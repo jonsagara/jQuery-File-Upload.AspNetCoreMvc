@@ -21,8 +21,8 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
         public FilesHelper(IHostingEnvironment env)
         {
             _env = env;
-            _storageRootPath = Path.Combine(env.ContentRootPath, FILE_DIR_PATH);
-            _storageTempPath = Path.Combine(env.ContentRootPath, TEMP_PATH);
+            _storageRootPath = Path.Combine(env.WebRootPath, FILE_DIR_PATH);
+            _storageTempPath = Path.Combine(env.WebRootPath, TEMP_PATH);
         }
 
         public string StorageRootPath => _storageRootPath;

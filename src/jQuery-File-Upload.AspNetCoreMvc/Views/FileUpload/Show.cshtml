@@ -1,0 +1,74 @@
+﻿@model FilesViewModel
+@{
+    ViewData["Title"] = "Show";
+}
+
+@section styles
+{
+    <environment names="@EnvironmentName.DEVELOPMENT">
+        <!-- blueimp Gallery styles -->
+        <link href="~/lib/blueimp-gallery/css/blueimp-gallery.min.css" rel="stylesheet" asp-append-version="true" />
+        @*<link href="~/lib/blueimp-gallery/css/blueimp-gallery-indicator.css" rel="stylesheet" asp-append-version="true" />*@
+
+        <!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
+        <link href="~/lib/blueimp-file-upload/css/jquery.fileupload.css" rel="stylesheet" asp-append-version="true" />
+        <link href="~/lib/blueimp-file-upload/css/jquery.fileupload-ui.css" rel="stylesheet" asp-append-version="true" />
+
+
+    </environment>
+}
+
+<h2>Show</h2>
+<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
+    <div class="slides"></div>
+    <h3 class="title"></h3>
+    <a class="prev">‹</a>
+    <a class="next">›</a>
+    <a class="close">×</a>
+    <a class="play-pause"></a>
+    <ol class="indicator"></ol>
+</div>
+<div id="links">
+
+    @if (@Model.Files != null && @Model.Files.Length != 0)
+    {
+        foreach (ViewDataUploadFilesResult file in @Model.Files)
+        {
+
+            if (file.type.Equals("video/mp4"))
+            {
+
+                <a href="@file.url" title="@file.name" type="video/mp4" data-description="This is a movie."><img src="@file.url" alt="@file.name"></a>
+
+
+            }
+            else
+            {
+                <a href="@file.url" title="@file.name" data-description="This is a image."><img src="@file.url" alt="@file.name"></a>
+            }
+
+        }
+    }
+    else
+    {
+        <p>No files</p>
+    }
+    <!--Your files goes here-->
+</div>
+
+
+
+@section scripts
+{
+    <environment names="@EnvironmentName.DEVELOPMENT">
+
+        <script src="~/lib/blueimp-gallery/js/blueimp-gallery.min.js" asp-append-version="true"></script>
+        <script src="~/lib/blueimp-gallery/js/blueimp-gallery-video.js" asp-append-version="true"></script>
+        <script src="~/lib/blueimp-gallery/js/blueimp-gallery-indicator.js" asp-append-version="true"></script>
+        <script src="~/lib/blueimp-gallery/js/jquery.blueimp-gallery.min.js" asp-append-version="true"></script>
+
+        @* Main application script *@
+        <script src="~/js/fileupload/show.js" asp-append-version="true"></script>
+
+    </environment>
+}
