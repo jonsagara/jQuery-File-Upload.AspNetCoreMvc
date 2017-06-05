@@ -41,7 +41,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
         }
 
         [HttpPost]
-        //[ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]
         public async Task<ActionResult> Upload(FileUploadUpload.Command command)
         {
             command.HttpContext = HttpContext;
@@ -54,23 +54,6 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
             return result.FileResults.Count == 0
                 ? Json("Error")
                 : Json(jsonFiles);
-
-            //var resultList = new List<ViewDataUploadFilesResult>();
-
-            //var CurrentContext = HttpContext;
-
-            //_filesHelper.UploadAndShowResults(CurrentContext, resultList);
-            //JsonFiles files = new JsonFiles(resultList);
-
-            //bool isEmpty = !resultList.Any();
-            //if (isEmpty)
-            //{
-            //    return Json("Error ");
-            //}
-            //else
-            //{
-            //    return Json(files);
-            //}
         }
 
         public JsonResult GetFileList()

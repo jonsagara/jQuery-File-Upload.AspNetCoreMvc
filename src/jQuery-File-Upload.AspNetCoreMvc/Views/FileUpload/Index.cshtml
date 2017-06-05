@@ -21,7 +21,7 @@
 <h2>jQuery File Upload</h2>
 
 
-<form id="fileupload" method="POST" enctype="multipart/form-data" data-url="@Url.Action("Upload","FileUpload")">
+<form id="fileupload" method="POST" enctype="multipart/form-data" asp-area="" asp-action="Upload" asp-controller="FileUpload">
     <div class="row fileupload-buttonbar">
         <div class="col-lg-7">
             <!-- The fileinput-button span is used to style the file input field as button -->
