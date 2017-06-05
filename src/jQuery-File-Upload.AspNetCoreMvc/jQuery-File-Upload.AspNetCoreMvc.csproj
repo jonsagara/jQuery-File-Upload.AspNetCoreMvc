@@ -10,6 +10,7 @@
     <RootNamespace>jQuery_File_Upload.AspNetCoreMvc</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00118" />
     <PackageReference Include="MediatR" Version="3.0.1" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="2.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.0" />

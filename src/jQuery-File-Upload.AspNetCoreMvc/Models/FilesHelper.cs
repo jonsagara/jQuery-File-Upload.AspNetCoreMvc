@@ -230,7 +230,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
                 string extansion = splited[1].ToLower();
                 if (extansion.Equals("jpeg") || extansion.Equals("jpg") || extansion.Equals("png") || extansion.Equals("gif"))
                 {
-                    string thumbnailUrl = URL_BASE + "thumbs/" + Path.GetFileNameWithoutExtension(FileName) + "80x80.jpg";
+                    string thumbnailUrl = URL_BASE + "thumbs/" + Path.GetFileNameWithoutExtension(FileName) + $"80x80{Path.GetExtension(FileName)}";
                     return thumbnailUrl;
                 }
                 else
