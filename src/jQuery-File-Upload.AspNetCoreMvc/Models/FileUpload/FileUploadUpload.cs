@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using ImageSharp;
+using ImageSharp.Formats;
 using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -61,6 +62,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
             {
                 const int THUMB_WIDTH = 80;
                 const int THUMB_HEIGHT = 80;
+                const int NORMAL_IMAGE_MAX_WIDTH = 540;
                 const string THUMBS_FOLDER_NAME = "thumbs";
 
                 // Ensure the storage root exists.
@@ -98,35 +100,36 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                             originalImage
                                 .Resize(THUMB_WIDTH, THUMB_HEIGHT)
                                 .Save(thumbStream);
+
+                            var width = originalImage.Width;
+                        }
+
+                        // If the image is wider than 540px, resize it so that it is 540px wide. Otherwise, upload a copy of the original.
+                        using (var originalImage = Image.Load(fullPath))
+                        {
+                            if (originalImage.Width > NORMAL_IMAGE_MAX_WIDTH)
+                            {
+                                // Resize it so that the max width is 540px. Maintain the aspect ratio.
+                                var newHeight = originalImage.Height * NORMAL_IMAGE_MAX_WIDTH / originalImage.Width;
+
+                                var normalImageName = $"{fileNameWithoutExtension}{NORMAL_IMAGE_MAX_WIDTH}x{newHeight}{extension}";
+                                var normalImagePath = Path.Combine(_filesHelper.StorageRootPath, normalImageName);
+
+                                IEncoderOptions encoderOptions = null;
+                                if (extension == ".jpg" || extension == ".jpeg")
+                                {
+                                    encoderOptions = new JpegEncoderOptions { Quality = 90 };
+                                }
+
+                                using (var normalImageStream = File.OpenWrite(normalImagePath))
+                                {
+                                    originalImage
+                                        .Resize(NORMAL_IMAGE_MAX_WIDTH, newHeight)
+                                        .Save(normalImageStream, encoderOptions);
+                                }
+                            }
                         }
                     }
-
-
-                    
-
-                    ////Create thumb
-                    //string[] imageArray = file.FileName.Split('.');
-                    //if (imageArray.Length != 0)
-                    //{
-                    //    string extansion = imageArray[imageArray.Length - 1].ToLower();
-                    //    if (extansion != "jpg" && extansion != "png" && extansion != "jpeg") //Do not create thumb if file is not an image
-                    //    {
-
-                    //    }
-                    //    else
-                    //    {
-                    //        var ThumbfullPath = Path.Combine(pathOnServer, "thumbs");
-                    //        //string fileThumb = file.FileName + ".80x80.jpg";
-                    //        string fileThumb = Path.GetFileNameWithoutExtension(file.FileName) + "80x80.jpg";
-                    //        var ThumbfullPath2 = Path.Combine(ThumbfullPath, fileThumb);
-                    //        using (MemoryStream stream = new MemoryStream(File.ReadAllBytes(fullPath)))
-                    //        {
-                    //            var thumbnail = new WebImage(stream).Resize(80, 80);
-                    //            thumbnail.Save(ThumbfullPath2, "jpg");
-                    //        }
-
-                    //    }
-                    //}
 
                     result.FileResults.Add(UploadResult(file.FileName, file.Length));
                 }
