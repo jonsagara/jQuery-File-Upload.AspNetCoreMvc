@@ -4,7 +4,6 @@ using jQuery_File_Upload.AspNetCoreMvc.Models;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -46,26 +45,15 @@ namespace jQuery_File_Upload.AspNetCoreMvc
 
             // Add framework services.
             services
-                .AddMvc()
-                .AddRazorOptions(opt =>
-                {
-                    // Enables use of C# 7 language features in views.
-                    opt.ParseOptions = opt.ParseOptions.WithLanguageVersion(LanguageVersion.CSharp7);
-                });
+                .AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime appLifetime)
         {
             // Serilog doesn't have an override that takes the Logging settings from appsettings.json, so we have to 
             //   provide our own settings here.
-            loggerFactory.WithFilter(new FilterLoggerSettings
-                {
-                    { "Microsoft", LogLevel.Warning },
-                    { "System", LogLevel.Warning },
-                    { "Default", LogLevel.Trace }
-                })
-                .AddSerilog(Log.Logger);
+            loggerFactory.AddSerilog(Log.Logger);
 
             if (env.IsDevelopment())
             {
@@ -85,6 +73,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            // Ensure any buffered events are sent at shutdown
+            appLifetime.ApplicationStopped.Register(Log.CloseAndFlush);
         }
     }
 }

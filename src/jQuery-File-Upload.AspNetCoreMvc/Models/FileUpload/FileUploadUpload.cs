@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using ImageSharp;
-using ImageSharp.Formats;
 using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Transforms;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
 {
@@ -14,7 +20,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
     {
         public class Command : IRequest<CommandResult>
         {
+            [BindNever]
             public HttpContext HttpContext { get; set; }
+
             public List<IFormFile> Files { get; private set; } = new List<IFormFile>();
         }
 
@@ -24,7 +32,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
         }
 
 
-        public class CommandHandler : IAsyncRequestHandler<Command, CommandResult>
+        public class CommandHandler : IRequestHandler<Command, CommandResult>
         {
             private readonly FilesHelper _filesHelper;
 
@@ -33,7 +41,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                 _filesHelper = filesHelper;
             }
 
-            public async Task<CommandResult> Handle(Command message)
+            public async Task<CommandResult> Handle(Command message, CancellationToken cancellationToken)
             {
                 var result = new CommandResult();
 
@@ -94,14 +102,12 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                         var thumbName = $"{fileNameWithoutExtension}{THUMB_WIDTH}x{THUMB_HEIGHT}{extension}";
                         var thumbPath = Path.Combine(_filesHelper.StorageRootPath, THUMBS_FOLDER_NAME, thumbName);
 
-                        using (var originalImage = Image.Load(fullPath))
-                        using (var thumbStream = File.OpenWrite(thumbPath))
-                        {
-                            originalImage
-                                .Resize(THUMB_WIDTH, THUMB_HEIGHT)
-                                .Save(thumbStream);
+                        // Create the thumnail directory if it doesn't exist.
+                        Directory.CreateDirectory(Path.GetDirectoryName(thumbPath));
 
-                            var width = originalImage.Width;
+                        using (var thumb = Image.Load(ResizeImage(fullPath, 80, 80)))
+                        {
+                            thumb.Save(thumbPath);
                         }
 
                         // If the image is wider than 540px, resize it so that it is 540px wide. Otherwise, upload a copy of the original.
@@ -115,17 +121,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                                 var normalImageName = $"{fileNameWithoutExtension}{NORMAL_IMAGE_MAX_WIDTH}x{newHeight}{extension}";
                                 var normalImagePath = Path.Combine(_filesHelper.StorageRootPath, normalImageName);
 
-                                IEncoderOptions encoderOptions = null;
-                                if (extension == ".jpg" || extension == ".jpeg")
+                                using (var normalImage = Image.Load(ResizeImage(fullPath, NORMAL_IMAGE_MAX_WIDTH, newHeight)))
                                 {
-                                    encoderOptions = new JpegEncoderOptions { Quality = 90 };
-                                }
-
-                                using (var normalImageStream = File.OpenWrite(normalImagePath))
-                                {
-                                    originalImage
-                                        .Resize(NORMAL_IMAGE_MAX_WIDTH, newHeight)
-                                        .Save(normalImageStream, encoderOptions);
+                                    normalImage.Save(normalImagePath);
                                 }
                             }
                         }
@@ -135,6 +133,52 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                 }
             }
 
+            private byte[] ResizeImage(string localTempFilePath, int width, int height)
+            {
+                try
+                {
+                    using (var originalImage = Image.Load(localTempFilePath))
+                    using (var thumbnailImage = originalImage.Clone())
+                    using (var thumbnailStream = new MemoryStream())
+                    {
+                        var extension = Path.GetExtension(localTempFilePath);
+                        IImageFormat format = originalImage.GetConfiguration().ImageFormatsManager.FindFormatByFileExtension(extension);
+                        IImageEncoder encoder = originalImage.GetConfiguration().ImageFormatsManager.FindEncoder(format);
+
+                        if (IsJpeg(extension))
+                        {
+                            // It's a JPEG, so ensure we're maintaining quality.
+                            encoder = new JpegEncoder { Quality = 90 };
+                        }
+
+                        // Resize the image.
+                        thumbnailImage.Mutate(op =>
+                        {
+                            op.Resize(width, height);
+                        });
+
+                        // Save it to the stream.
+                        thumbnailImage.Save(thumbnailStream, encoder);
+
+                        // Return the bytes to save to disk.
+                        return thumbnailStream.ToArray();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unhandled error trying to resize local image '{localTempFilePath}' to Width={width}px, Height={height}px", ex);
+                }
+            }
+
+            /// <summary>
+            /// The file's extension, including the &quot;.&quot;.
+            /// </summary>
+            private bool IsJpeg(string extension)
+            {
+                return ".jpeg".Equals(extension, StringComparison.OrdinalIgnoreCase)
+                    || ".jpg".Equals(extension, StringComparison.OrdinalIgnoreCase);
+            }
+
             private void UploadPartialFile(Command message, string partialFileName)
             {
                 throw new NotImplementedException();
@@ -142,7 +186,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
 
             private ViewDataUploadFilesResult UploadResult(string fileName, long fileSizeInBytes)
             {
-                string getType = MimeMapping.GetMimeMapping(fileName);
+                var getType = MimeMapping.GetMimeMapping(fileName);
 
                 var result = new ViewDataUploadFilesResult()
                 {
@@ -154,8 +198,9 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                     thumbnailUrl = _filesHelper.CheckThumb(getType, fileName),
                     deleteType = _filesHelper.DeleteType,
                 };
+
                 return result;
             }
-        }        
+        }
     }
 }
