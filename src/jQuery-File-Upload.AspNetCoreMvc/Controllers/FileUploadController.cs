@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using jQuery_File_Upload.AspNetCoreMvc.Models;
 using jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
@@ -12,7 +10,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
     {
         private readonly FilesHelper _filesHelper;
         private readonly IMediator _mediator;
-        
+
         public FileUploadController(FilesHelper filesHelper, IMediator mediator)
         {
             _filesHelper = filesHelper;
@@ -47,7 +45,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
             command.HttpContext = HttpContext;
 
             var result = await _mediator.Send(command);
-            
+
             // I think we can move this into the mediatr class.
             var jsonFiles = new JsonFiles(result.FileResults);
 
@@ -61,7 +59,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Controllers
             var list = _filesHelper.GetFileList();
             return Json(list);
         }
-        
+
         public JsonResult DeleteFile(string file)
         {
             _filesHelper.DeleteFile(file);

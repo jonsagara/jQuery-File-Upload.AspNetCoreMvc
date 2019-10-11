@@ -3,15 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using ImageMagick;
 using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
 {
@@ -94,7 +91,7 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
 
 
                         //
-                        // Create an 80x80 thumbnail.
+                        // Create an 80x80 thumbnail, and possibly resize the original if it exceeds an arbitrary max width.
                         //
 
                         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file.FileName);
@@ -104,14 +101,17 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                         // Create the thumnail directory if it doesn't exist.
                         Directory.CreateDirectory(Path.GetDirectoryName(thumbPath));
 
-                        using (var thumb = Image.Load(ResizeImage(fullPath, 80, 80)))
+                        // For GIFs, we have to use MagickNET. For JPEGs and PNGs, we can use SkiaSharp.
+                        if (IsGif(extension))
                         {
-                            thumb.Save(thumbPath);
-                        }
+                            using (var thumbStream = MagickNetResizeImage(fullPath, destWidthPx: 80, destHeightPx: 80))
+                            using (var thumbFileStream = File.OpenWrite(thumbPath))
+                            {
+                                await thumbStream.CopyToAsync(thumbFileStream);
+                            }
 
-                        // If the image is wider than 540px, resize it so that it is 540px wide. Otherwise, upload a copy of the original.
-                        using (var originalImage = Image.Load(fullPath))
-                        {
+                            // If the image is wider than 540px, resize it so that it is 540px wide. Otherwise, upload a copy of the original.
+                            using var originalImage = SKBitmap.Decode(fullPath);
                             if (originalImage.Width > NORMAL_IMAGE_MAX_WIDTH)
                             {
                                 // Resize it so that the max width is 540px. Maintain the aspect ratio.
@@ -120,9 +120,35 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                                 var normalImageName = $"{fileNameWithoutExtension}{NORMAL_IMAGE_MAX_WIDTH}x{newHeight}{extension}";
                                 var normalImagePath = Path.Combine(_filesHelper.StorageRootPath, normalImageName);
 
-                                using (var normalImage = Image.Load(ResizeImage(fullPath, NORMAL_IMAGE_MAX_WIDTH, newHeight)))
+                                using (var normalImgStream = MagickNetResizeImage(fullPath, NORMAL_IMAGE_MAX_WIDTH, newHeight))
+                                using (var normalImgFileStream = File.OpenWrite(normalImagePath))
                                 {
-                                    normalImage.Save(normalImagePath);
+                                    await normalImgStream.CopyToAsync(normalImgFileStream);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            using (var thumbStream = SkiaSharpResizeImage(fullPath, destWidthPx: 80, destHeightPx: 80))
+                            using (var thumbFileStream = File.OpenWrite(thumbPath))
+                            {
+                                await thumbStream.CopyToAsync(thumbFileStream);
+                            }
+
+                            // If the image is wider than 540px, resize it so that it is 540px wide. Otherwise, upload a copy of the original.
+                            using var originalImage = SKBitmap.Decode(fullPath);
+                            if (originalImage.Width > NORMAL_IMAGE_MAX_WIDTH)
+                            {
+                                // Resize it so that the max width is 540px. Maintain the aspect ratio.
+                                var newHeight = originalImage.Height * NORMAL_IMAGE_MAX_WIDTH / originalImage.Width;
+
+                                var normalImageName = $"{fileNameWithoutExtension}{NORMAL_IMAGE_MAX_WIDTH}x{newHeight}{extension}";
+                                var normalImagePath = Path.Combine(_filesHelper.StorageRootPath, normalImageName);
+
+                                using (var normalImgStream = SkiaSharpResizeImage(fullPath, NORMAL_IMAGE_MAX_WIDTH, newHeight))
+                                using (var normalImgFileStream = File.OpenWrite(normalImagePath))
+                                {
+                                    await normalImgStream.CopyToAsync(normalImgFileStream);
                                 }
                             }
                         }
@@ -132,40 +158,78 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                 }
             }
 
-            private byte[] ResizeImage(string localTempFilePath, int width, int height)
+            private MemoryStream SkiaSharpResizeImage(string localTempFilePath, int destWidthPx, int destHeightPx)
             {
                 try
                 {
-                    using (var originalImage = Image.Load(localTempFilePath))
-                    using (var thumbnailImage = originalImage.Clone())
-                    using (var thumbnailStream = new MemoryStream())
-                    {
-                        var extension = Path.GetExtension(localTempFilePath);
-                        IImageFormat format = originalImage.GetConfiguration().ImageFormatsManager.FindFormatByFileExtension(extension);
-                        IImageEncoder encoder = originalImage.GetConfiguration().ImageFormatsManager.FindEncoder(format);
+                    using var originalBmp = SKBitmap.Decode(localTempFilePath);
+                    using var scaledBmp = originalBmp.Resize(new SKImageInfo(destWidthPx, destHeightPx), SKFilterQuality.High);
+                    using var scaledImg = SKImage.FromBitmap(scaledBmp);
 
-                        if (IsJpeg(extension))
+                    SKData scaledImgData = null;
+
+                    var extension = Path.GetExtension(localTempFilePath).ToLower();
+                    switch (extension)
+                    {
+                        case ".jpg":
+                        case ".jpeg":
+                            scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Jpeg, quality: 90);
+                            break;
+
+                        case ".png":
+                            scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Png, quality: 100);
+                            break;
+
+                        //case ".gif":
+                        //    scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Gif, quality: 100);
+                        //    break;
+
+                        default:
+                            throw new NotSupportedException($"Unable to resize file: unsupported image type \"{extension}\"");
+                    }
+
+                    var thumbnailStream = new MemoryStream();
+                    scaledImgData.SaveTo(thumbnailStream);
+                    thumbnailStream.Position = 0L;
+
+                    return thumbnailStream;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unhandled error trying to resize local image '{localTempFilePath}' to Width={destWidthPx}px, Height={destHeightPx}px", ex);
+                }
+            }
+
+            private MemoryStream MagickNetResizeImage(string localTempFilePath, int destWidthPx, int destHeightPx)
+            {
+                try
+                {
+                    // Read from file
+                    using (var collection = new MagickImageCollection(localTempFilePath))
+                    {
+                        // This will remove the optimization and change the image to how it looks at that point
+                        // during the animation. More info here: http://www.imagemagick.org/Usage/anim_basics/#coalesce
+                        collection.Coalesce();
+
+                        // Resize each image in the collection to a width of 200. When zero is specified for the height
+                        // the height will be calculated with the aspect ratio.
+                        foreach (MagickImage image in collection)
                         {
-                            // It's a JPEG, so ensure we're maintaining quality.
-                            encoder = new JpegEncoder { Quality = 90 };
+                            image.Resize(width: destWidthPx, height: destHeightPx);
                         }
 
-                        // Resize the image.
-                        thumbnailImage.Mutate(op =>
-                        {
-                            op.Resize(width, height);
-                        });
+                        // Save the result
+                        //collection.Write(SampleFiles.OutputDirectory + "Snakeware.resized.gif");
+                        var resizedImgStream = new MemoryStream();
+                        collection.Write(resizedImgStream);
+                        resizedImgStream.Position = 0L;
 
-                        // Save it to the stream.
-                        thumbnailImage.Save(thumbnailStream, encoder);
-
-                        // Return the bytes to save to disk.
-                        return thumbnailStream.ToArray();
+                        return resizedImgStream;
                     }
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Unhandled error trying to resize local image '{localTempFilePath}' to Width={width}px, Height={height}px", ex);
+                    throw new Exception($"Unhandled error trying to resize local image '{localTempFilePath}' to Width={destWidthPx}px, Height={destHeightPx}px", ex);
                 }
             }
 
@@ -177,6 +241,14 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                 return ".jpeg".Equals(extension, StringComparison.OrdinalIgnoreCase)
                     || ".jpg".Equals(extension, StringComparison.OrdinalIgnoreCase);
             }
+
+            /// <summary>
+            /// Looks at the file's extension and returns true if this is a GIF; false otherwise.
+            /// </summary>
+            /// <param name="extension"></param>
+            /// <returns></returns>
+            private bool IsGif(string extension) => ".gif".Equals(extension, StringComparison.OrdinalIgnoreCase);
+
 
             private void UploadPartialFile(Command message, string partialFileName)
             {
