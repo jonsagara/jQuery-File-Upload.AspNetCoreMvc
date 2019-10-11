@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 using Microsoft.AspNetCore.Hosting;
 
@@ -14,11 +13,11 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models
         private const string DELETE_URL = "/FileUpload/DeleteFile/?file=";
         private const string DELETE_TYPE = "GET";
 
-        private readonly IHostingEnvironment _env;
+        private readonly IWebHostEnvironment _env;
         private readonly string _storageRootPath;
         private readonly string _storageTempPath;
 
-        public FilesHelper(IHostingEnvironment env)
+        public FilesHelper(IWebHostEnvironment env)
         {
             _env = env;
             _storageRootPath = Path.Combine(env.WebRootPath, FILE_DIR_PATH);

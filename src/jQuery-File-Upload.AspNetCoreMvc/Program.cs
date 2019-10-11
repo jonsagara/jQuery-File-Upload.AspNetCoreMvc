@@ -1,24 +1,42 @@
-﻿using Microsoft.AspNetCore;
+﻿using System;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace jQuery_File_Upload.AspNetCoreMvc
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            // As of 2.0, it's bad practice to do anything in BuildWebHost except build and configure the web host. 
-            //   Anything that is about running the application should be handled outside of BuildWebHost — typically
-            //   in the Main method of Program.cs.
-            //   See: https://docs.microsoft.com/en-us/aspnet/core/migration/1x-to-2x/#move-database-initialization-code
-            var host = CreateWebHostBuilder(args)
-                .Build();
+            try
+            {
+                CreateHostBuilder(args).Build().Run();
 
-            host.Run();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception and let the application terminate. Try to write to Serilog, but in case it's not
+                //   yet configured, also write out to the console.
+                Console.Error.WriteLine($"Host terminated unexpectedly: {ex}");
+                Log.Fatal(ex, "Host terminated unexpectedly");
+
+                return 1;
+            }
+            finally
+            {
+                // Ensure all logs are written before the application terminates.
+                Log.CloseAndFlush();
+            }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(
+                    webBuilder =>
+                    {
+                        webBuilder.UseStartup<Startup>();
+                    });
     }
 }
