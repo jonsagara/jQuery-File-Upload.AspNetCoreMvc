@@ -166,27 +166,32 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                     using var scaledBmp = originalBmp.Resize(new SKImageInfo(destWidthPx, destHeightPx), SKFilterQuality.High);
                     using var scaledImg = SKImage.FromBitmap(scaledBmp);
 
-                    SKData scaledImgData = null;
+                    SKEncodedImageFormat encodedImageFormat;
+                    int quality;
 
                     var extension = Path.GetExtension(localTempFilePath).ToLower();
                     switch (extension)
                     {
                         case ".jpg":
                         case ".jpeg":
-                            scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Jpeg, quality: 90);
+                            encodedImageFormat = SKEncodedImageFormat.Jpeg;
+                            quality = 90;
                             break;
 
                         case ".png":
-                            scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Png, quality: 100);
+                            encodedImageFormat = SKEncodedImageFormat.Png;
+                            quality = 100;
                             break;
 
+                        // Skia doesn't support resizing GIFs. We use Magick.NET for that.
                         //case ".gif":
-                        //    scaledImgData = scaledImg.Encode(SKEncodedImageFormat.Gif, quality: 100);
                         //    break;
 
                         default:
                             throw new NotSupportedException($"Unable to resize file: unsupported image type \"{extension}\"");
                     }
+
+                    using var scaledImgData = scaledImg.Encode(encodedImageFormat, quality);
 
                     var thumbnailStream = new MemoryStream();
                     scaledImgData.SaveTo(thumbnailStream);
@@ -219,7 +224,6 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                         }
 
                         // Save the result
-                        //collection.Write(SampleFiles.OutputDirectory + "Snakeware.resized.gif");
                         var resizedImgStream = new MemoryStream();
                         collection.Write(resizedImgStream);
                         resizedImgStream.Position = 0L;
@@ -231,15 +235,6 @@ namespace jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload
                 {
                     throw new Exception($"Unhandled error trying to resize local image '{localTempFilePath}' to Width={destWidthPx}px, Height={destHeightPx}px", ex);
                 }
-            }
-
-            /// <summary>
-            /// The file's extension, including the &quot;.&quot;.
-            /// </summary>
-            private bool IsJpeg(string extension)
-            {
-                return ".jpeg".Equals(extension, StringComparison.OrdinalIgnoreCase)
-                    || ".jpg".Equals(extension, StringComparison.OrdinalIgnoreCase);
             }
 
             /// <summary>
