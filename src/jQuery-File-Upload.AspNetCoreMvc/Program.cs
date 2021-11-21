@@ -1,42 +1,78 @@
-﻿using System;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+﻿using jQuery_File_Upload.AspNetCoreMvc.Infrastructure;
+using jQuery_File_Upload.AspNetCoreMvc.Models;
+using MediatR;
 using Serilog;
 
-namespace jQuery_File_Upload.AspNetCoreMvc
+// The initial "bootstrap" logger is able to log errors during start-up. It's completely replaced by the
+//   logger configured in `UseSerilog()`, once configuration and dependency-injection have both been
+//   set up successfully.
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+
+//
+// Create the builder.
+//
+
+var builder = WebApplication.CreateBuilder(args);
+
+
+//
+// Add services to the container.
+//
+
+builder.Host.UseSerilog(WebHostBuilderHelper.ConfigureSerilog);
+
+// Configure MediatR.
+builder.Services.AddMediatR(typeof(Program));
+
+// Application services
+builder.Services.AddScoped<FilesHelper, FilesHelper>();
+
+// Add framework services.
+builder.Services
+    .AddMvc()
+    .AddNewtonsoftJson();
+
+try
 {
-    public class Program
+    //
+    // Build the application and configure the HTTP request pipeline.
+    //
+
+    var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
     {
-        public static int Main(string[] args)
-        {
-            try
-            {
-                CreateHostBuilder(args).Build().Run();
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                // Log the exception and let the application terminate. Try to write to Serilog, but in case it's not
-                //   yet configured, also write out to the console.
-                Console.Error.WriteLine($"Host terminated unexpectedly: {ex}");
-                Log.Fatal(ex, "Host terminated unexpectedly");
-
-                return 1;
-            }
-            finally
-            {
-                // Ensure all logs are written before the application terminates.
-                Log.CloseAndFlush();
-            }
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(
-                    webBuilder =>
-                    {
-                        webBuilder.UseStartup<Startup>();
-                    });
+        app.UseDeveloperExceptionPage();
     }
+    else
+    {
+        app.UseExceptionHandler("/Home/Error");
+    }
+
+    app.UseStaticFiles();
+
+    app.UseRouting();
+
+    app.UseEndpoints(routes =>
+    {
+        routes.MapControllerRoute(
+            name: "default",
+            pattern: "{controller=Home}/{action=Index}/{id?}");
+    });
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, $"Unhandled exception in {nameof(Program)}: {ex}");
+
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
 }

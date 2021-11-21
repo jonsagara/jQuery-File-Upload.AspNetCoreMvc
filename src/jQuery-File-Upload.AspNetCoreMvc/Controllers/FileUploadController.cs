@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using jQuery_File_Upload.AspNetCoreMvc.Models;
+﻿using jQuery_File_Upload.AspNetCoreMvc.Models;
 using jQuery_File_Upload.AspNetCoreMvc.Models.FileUpload;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

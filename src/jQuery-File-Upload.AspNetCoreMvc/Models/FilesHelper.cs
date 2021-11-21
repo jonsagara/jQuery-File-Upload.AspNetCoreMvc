@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using jQuery_File_Upload.AspNetCoreMvc.Utilities;
-using Microsoft.AspNetCore.Hosting;
+﻿using jQuery_File_Upload.AspNetCoreMvc.Utilities;
 
 namespace jQuery_File_Upload.AspNetCoreMvc.Models
 {

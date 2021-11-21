@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28729.10
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jQuery-File-Upload.AspNetCoreMvc", "src\jQuery-File-Upload.AspNetCoreMvc\jQuery-File-Upload.AspNetCoreMvc.csproj", "{D0111B09-4EC8-49F0-BAFF-62CF6985D783}"
 EndProject

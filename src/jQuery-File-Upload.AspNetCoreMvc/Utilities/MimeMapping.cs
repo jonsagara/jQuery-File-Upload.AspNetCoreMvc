@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace jQuery_File_Upload.AspNetCoreMvc.Utilities
+﻿namespace jQuery_File_Upload.AspNetCoreMvc.Utilities
 {
     /// <summary>
     /// Credit: https://github.com/Microsoft/referencesource/blob/master/System.Web/MimeMapping.cs

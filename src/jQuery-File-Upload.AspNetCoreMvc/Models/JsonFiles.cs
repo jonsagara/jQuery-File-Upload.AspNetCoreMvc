@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace jQuery_File_Upload.AspNetCoreMvc.Models
+﻿namespace jQuery_File_Upload.AspNetCoreMvc.Models
 {
     public class JsonFiles
     {
