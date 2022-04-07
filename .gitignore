@@ -17,4 +17,7 @@ App_Data/
 .vs/
 Logs/
 Files/
-
+node_modules/
+.idea/
+.fake
+.ionide
